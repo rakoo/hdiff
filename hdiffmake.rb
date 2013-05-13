@@ -2,12 +2,13 @@ require 'digest/sha1'
 require 'trollop'
 
 BLOCK_SIZE = 1024
+BOUNDARY = 1023
 
 class RollingChecksum
 
   MODULO = 1 << 32
 
-  attr_reader :found_boundary, :buffer
+  attr_reader :found_boundary
 
   def initialize first_block
 
@@ -17,12 +18,12 @@ class RollingChecksum
 
     # byte_index is an array of [byte, index]
     @r2 = first_block.each_byte.with_index.inject(0) do |sum, byte_index|
-      sum += (BLOCK_SIZE - byte_index[1]) * byte_index[0]
+      sum += (first_block.bytesize - byte_index[1]) * byte_index[0]
     end % MODULO
 
     @buffer = first_block.bytes
 
-    @found_boundary = rolldigest & 1023 == 1023
+    @found_boundary = rolldigest & BOUNDARY == BOUNDARY
 
     @digest = Digest::SHA1.new
     @digest << first_block
@@ -30,6 +31,7 @@ class RollingChecksum
 
   def eat next_byte
     @buffer << next_byte
+
     out = @buffer[-(1 + BLOCK_SIZE)]
 
     @r1 += next_byte - out
@@ -38,7 +40,7 @@ class RollingChecksum
     @r2 += @r1 - BLOCK_SIZE * out
     @r2 %= MODULO
 
-    @found_boundary = rolldigest & 1023 == 1023
+    @found_boundary = rolldigest & BOUNDARY == BOUNDARY
   end
 
   # Called when found boundary
@@ -102,9 +104,12 @@ if __FILE__ == $0
 
   abort "File is too short" if File.size(file) <= BLOCK_SIZE
 
-  File.open(output, File::CREAT|File::EXCL|File::TRUNC|File::WRONLY) do |o|
-    roll_file file do |summary|
-      o.puts summary
-    end
+  roll_file file do |summary|
+    puts summary
   end
+#  File.open(output, File::CREAT|File::EXCL|File::TRUNC|File::WRONLY) do |o|
+#    roll_file file do |summary|
+#      o.puts summary
+#    end
+#  end
 end
