@@ -1,0 +1,1 @@
+require 'hdiff/roller'
