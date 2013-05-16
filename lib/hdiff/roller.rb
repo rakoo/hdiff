@@ -8,15 +8,13 @@ module HDiff
 
     BOUNDARY = 1023
 
-    MODULO = 1 << 32
-
     attr_reader :found_boundary
 
     def initialize first_block
 
       @r = first_block.each_byte.inject do |sum, byte|
         sum += byte
-      end % MODULO
+      end & BOUNDARY
 
       @buffer = first_block.bytes
 
@@ -32,7 +30,7 @@ module HDiff
       out = @buffer[-(1 + BLOCK_SIZE)]
 
       @r += next_byte - out
-      @r %= MODULO
+      @r &= BOUNDARY
 
       determine_found!
     end
@@ -45,7 +43,7 @@ module HDiff
     private
 
     def determine_found!
-      @found_boundary = @r & BOUNDARY == BOUNDARY
+      @found_boundary = @r == BOUNDARY
     end
 
     def hexdigest
