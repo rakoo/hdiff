@@ -12,8 +12,9 @@ class HdiffStore
 
   def hdiff filename
     ret = ""
-    HDiff.roll(File.open(file, File::RDONLY)) do |summary|
-      ret << summary
+    HDiff.roll(File.open(filename, File::RDONLY)) do |summary|
+      ret << summary.join('-')
+      ret << "\r\n"
     end
     ret
   end
