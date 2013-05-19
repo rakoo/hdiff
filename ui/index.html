@@ -1,0 +1,109 @@
+<html>
+  <head>
+    <script type="text/javascript">
+      function getStoredHdiff(filename) {
+        return storedHdiffs[filename];
+      }
+
+      var storedHdiffs = {};
+      function storeHdiff(filename, data) {
+        storedHdiffs[filename] = data;
+      }
+
+      function fetchhdiff(filename) {
+        var xhr = new XMLHttpRequest();
+
+        xhr.onreadystatechange = function() {
+          if (this.readyState == 4) {
+            storeHdiff(filename, this.response);
+
+            document.getElementById('status').innerHTML = "fetched " +
+              filename;
+          }
+        };
+        xhr.open("GET", filename, true);
+        xhr.setRequestHeader("Accept", "text/hdiff");
+        xhr.send();
+      }
+
+      var postsha = "";
+      var fetch = {};
+
+      function comparePrePost() {
+        var preHdiff = getStoredHdiff("index.php.pre");
+        var postHdiff = getStoredHdiff("index.php.post");
+
+        var postlines = postHdiff.split('\r\n');
+        var prelines = preHdiff.split('\r\n');
+
+        var postlinesIndex = 0;
+        var prelinesIndex = 0;
+
+        var postoffset = 0;
+        var preoffset = 0;
+
+        while(postlinesIndex < postlines.length) {
+
+          postline = postlines[postlinesIndex].split('-');
+          preline = prelines[prelinesIndex].split('-');
+          if (postline[0] == preline[0]) {
+            prelinesIndex++;
+            preoffset += parseInt(preline[1]);
+          } else {
+            fetch[postline[0]] = postoffset.toString() + "-" + (postoffset
+                + parseInt(postline[1])).toString();
+          }
+
+          postlinesIndex++;
+          postoffset += parseInt(postline[1]);
+        }
+
+        while(prelinesIndex < prelines.length) {
+          line = prelines[prelinesIndex].split('-');
+          if (line[0] in fetch) {
+            delete fetch[line[0]];
+          }
+          prelinesIndex++;
+          preoffset += parseInt(line[1]);
+        }
+
+        postsha = postlines[postlines.length - 2].split('-')[0];
+        delete fetch[postsha]
+
+        console.log(fetch);
+      }
+
+      function getFileRange(filename, ranges) {
+        var xhr = new XMLHttpRequest();
+
+        xhr.onreadystatechange = function() {
+          if (this.readyState == 4) {
+            storeHdiff(filename, this.response);
+
+            document.getElementById('status').innerHTML = "fetched " +
+              filename;
+          }
+        };
+        xhr.open("GET", filename, true);
+        byteranges = "";
+        for (key in fetch) {
+          if (fetch.hasOwnProperty(key)) {
+            byteranges += fetch[key] + ',';
+          }
+        }
+        xhr.setRequestHeader("Range", "bytes=" + byteranges);
+        xhr.setRequestHeader("Accept", "text/plain");
+        xhr.send();
+      }
+
+    </script>
+  </head>
+
+  <body>
+    <p><a href="#" onClick='fetchhdiff("index.php.pre");'>Fetch pre signature</a></p>
+    <p><a href="#" onClick='fetchhdiff("index.php.post");'>Fetch post signature</a></p>
+    <p><a href="#" onClick='comparePrePost();'>Compare pre/post</a></p>
+    <p><a href="#" onClick='getFileRange("index.php.post");'>Get post file's ranges</a></p>
+    <p id="status"></p>
+  </body>
+</html>

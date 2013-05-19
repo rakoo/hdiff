@@ -28,6 +28,10 @@ class HdiffServer < Sinatra::Base
     mime_type :hdiff, 'text/hdiff'
   end
 
+  get '/index.html' do
+    send_file "../ui/index.html"
+  end
+
   get '/:filename' do
     filename = params[:filename]
     return 404 unless File.exists? filename
