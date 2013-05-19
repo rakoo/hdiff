@@ -40,7 +40,7 @@ class HdiffServer < Sinatra::Base
     etag Digest::SHA1.file filename
 
     if request.accept?('text/hdiff')
-      [200, {"Content-Type" => "text/hdiff"}, [@store.future.hdiff(filename).value]]
+      [200, {"Content-Type" => "text/hdiff"}, [Celluloid::Actor[:hdiffstore].future.hdiff(filename).value]]
     else
       send_file filename
     end
@@ -48,7 +48,6 @@ class HdiffServer < Sinatra::Base
 
   if __FILE__ == $0
     ::HdiffStore.supervise_as :hdiffstore
-    @store = Celluloid::Actor[:hdiffstore]
     run!
   end
 end
