@@ -25,11 +25,13 @@ module HDiff
     end
 
     def eat next_byte
-      @buffer << next_byte
+      next_byte_int = next_byte.unpack('C').first
+      @buffer << next_byte_int
+      @digest << next_byte
 
       out = @buffer[-(1 + BLOCK_SIZE)]
 
-      @r += next_byte - out
+      @r += next_byte_int - out
       @r &= BOUNDARY
 
       determine_found!
@@ -37,7 +39,7 @@ module HDiff
 
     # Called when found boundary
     def summary
-      "#{hexdigest} #{@buffer.size}"
+      [hexdigest, @buffer.size]
     end
 
     private
@@ -73,18 +75,18 @@ module HDiff
           roll = RollingChecksum.new block
           old_block = block
         else
-          yield "#{Digest::SHA1.hexdigest(block)} #{block.bytesize}"
+          yield [Digest::SHA1.hexdigest(block), block.bytesize]
         end
       else
         next_byte = io.read(1)
         total_sum << next_byte
-        roll.eat next_byte.unpack('C').first 
+        roll.eat next_byte
       end
 
 
     end
 
-    yield total_sum.hexdigest
+    yield [total_sum.hexdigest, io.size]
   end
 
 end
