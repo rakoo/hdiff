@@ -45,7 +45,11 @@ The workflow is straightforward:
 One of the key designs of this solution is that the Webserver that
 distributes your content isn't changed at all. There is only one
 supplementary piece of information (the hdiff signature) that needs to
-be computed and distributed.
+be computed and distributed on the server, but all the work of comparing
+versions and selecting what to download is done on the client. Due to
+the very nature of the HTTP protocol and its high asymetry in
+implementation change dynamic, resource usage and importance, I believe
+the client is the best place to do any change.
 
 ## Drawbacks
 
@@ -63,6 +67,14 @@ There are a few drawbacks to the approach, though:
 3. There is a strong need of atomicity here: you have to be sure that
    the blocks you download really are related to the hdiff signature you
    got earlier.
+
+## What's there
+A library to compute hdiff signatures, an executable to compute it and
+output to stdout or to a file, and a sinatra application to compute the
+hdiff signature on the fly if the request has a Accept: header. There
+also is a sample html page to test retrieving a hdiff signature and
+computing a difference, but my lack of skills in javascript start to be
+visible here.
 
 ## Licence
 [CC0](https://creativecommons.org/publicdomain/zero/1.0/)
